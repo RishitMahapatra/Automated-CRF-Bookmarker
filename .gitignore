@@ -1,0 +1,7 @@
+﻿Main_Module/dist/
+Main_Module/build/
+Main_Module/__pycache__/
+.venv/
+venv/
+*.spec
+*.exe
