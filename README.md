@@ -13,11 +13,12 @@
 </p>
 
 <p align="center">
-   
-![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![PyMuPDF](https://img.shields.io/badge/PyMuPDF-PDF_Engine-ff0000?style=for-the-badge)
-![CustomTkinter](https://img.shields.io/badge/CustomTkinter-UI-2b2b2b?style=for-the-badge)
-![MIT License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)
+
+![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![PyMuPDF](https://img.shields.io/badge/PyMuPDF-PDF_Engine-EA4335?style=for-the-badge)
+![CustomTkinter](https://img.shields.io/badge/CustomTkinter-Desktop_UI-37B27C?style=for-the-badge)
+![PyInstaller](https://img.shields.io/badge/PyInstaller-Executable-4B8BBE?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-339AF0?style=for-the-badge)
 
 </p>
 
