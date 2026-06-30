@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRF Auto-Bookmarker — Documentation</title>
+  <style>
+    /* ============================================================
+       ROOT VARIABLES — Dark Green Theme (mirrors app.py palette)
+       ============================================================ */
+    :root {
+      --bg:           #1a1a1a;
+      --surface:      #242424;
+      --surface-2:    #2d2d2d;
+      --border:       #383838;
+      --green:        #4CAF50;
+      --green-dim:    #388E3C;
+      --green-glow:   rgba(76, 175, 80, 0.15);
+      --blue:         #2196F3;
+      --blue-dim:     #1976D2;
+      --red:          #FF5555;
+      --text:         #e0e0e0;
+      --text-dim:     #9e9e9e;
+      --text-muted:   #616161;
+      --code-bg:      #1e1e1e;
+      --radius:       10px;
+      --radius-sm:    6px;
+    }
+
+    /* ============================================================
+       RESET & BASE
+       ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    a { color: var(--green); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    h1, h2, h3, h4 {
+      font-weight: 700;
+      line-height: 1.25;
+      color: #f0f0f0;
+    }
+
+    /* ============================================================
+       LAYOUT HELPERS
+       ============================================================ */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .section {
+      padding: 64px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .section:last-child { border-bottom: none; }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 10px;
+    }
+
+    .section-title {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .section-intro {
+      color: var(--text-dim);
+      font-size: 15px;
+      max-width: 640px;
+      margin-bottom: 40px;
+    }
+
+    /* ============================================================
+       NAV BAR
+       ============================================================ */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(26, 26, 26, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 58px;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .nav-brand .icon {
+      font-size: 20px;
+    }
+
+    .nav-badge {
+      background: var(--green-glow);
+      border: 1px solid var(--green-dim);
+      color: var(--green);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-dim);
+      font-size: 13px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover {
+      color: var(--green);
+      text-decoration: none;
+    }
+
+    /* ============================================================
+       HERO
+       ============================================================ */
+    .hero {
+      padding: 80px 0 72px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 800px 400px at 50% -100px, rgba(76, 175, 80, 0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--green-glow);
+      border: 1px solid var(--green-dim);
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 22px;
+      letter-spacing: 0.3px;
+    }
+
+    .hero h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      letter-spacing: -0.5px;
+      margin-bottom: 18px;
+    }
+
+    .hero h1 span { color: var(--green); }
+
+    .hero-sub {
+      font-size: 17px;
+      color: var(--text-dim);
+      max-width: 560px;
+      margin-bottom: 36px;
+      line-height: 1.6;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 22px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: #fff;
+      border: none;
+    }
+    .btn-primary:hover {
+      background: var(--green-dim);
+      text-decoration: none;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      border-color: var(--green-dim);
+      color: var(--green);
+      text-decoration: none;
+      transform: translateY(-1px);
+    }
+
+    .hero-screenshot {
+      margin-top: 52px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+      background: var(--surface);
+    }
+
+    .hero-screenshot img {
+      width: 100%;
+      display: block;
+    }
+
+    /* Placeholder screenshot frame */
+    .screenshot-mock {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      margin-top: 52px;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+    }
+
+    .mock-titlebar {
+      background: #1a1a1a;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .mock-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+    }
+    .dot-red   { background: #ff5f57; }
+    .dot-yellow{ background: #febc2e; }
+    .dot-green { background: #28c840; }
+
+    .mock-title {
+      flex: 1;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .mock-body {
+      padding: 24px;
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 13px;
+      color: #ccc;
+      min-height: 180px;
+    }
+
+    .mock-body .green  { color: #4CAF50; }
+    .mock-body .blue   { color: #64B5F6; }
+    .mock-body .gray   { color: #888; }
+    .mock-body .sep    { color: #555; }
+
+    /* ============================================================
+       FEATURE GRID
+       ============================================================ */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-top: 40px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .feature-card:hover {
+      border-color: var(--green-dim);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      font-size: 28px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .feature-card h3 {
+      font-size: 15px;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    /* ============================================================
+       STEPS (numbered)
+       ============================================================ */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin-top: 32px;
+    }
+
+    .step {
+      display: flex;
+      gap: 20px;
+      position: relative;
+    }
+
+    .step-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .step-num {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--green-glow);
+      border: 2px solid var(--green-dim);
+      color: var(--green);
+      font-weight: 700;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      z-index: 1;
+    }
+
+    .step-line {
+      width: 2px;
+      flex: 1;
+      background: var(--border);
+      min-height: 32px;
+      margin: 4px 0;
+    }
+
+    .step:last-child .step-line { display: none; }
+
+    .step-body {
+      padding-bottom: 36px;
+      flex: 1;
+    }
+
+    .step:last-child .step-body { padding-bottom: 0; }
+
+    .step-body h3 {
+      font-size: 16px;
+      margin-bottom: 8px;
+      padding-top: 6px;
+    }
+
+    .step-body p {
+      font-size: 14px;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+
+    /* ============================================================
+       CODE BLOCKS
+       ============================================================ */
+    pre, code {
+      font-family: "Consolas", "SF Mono", "Fira Code", "Courier New", monospace;
+    }
+
+    code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #a8d8a8;
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 18px 20px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.6;
+      margin: 12px 0;
+      position: relative;
+    }
+
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      color: var(--text);
+      font-size: inherit;
+    }
+
+    .code-lang {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+
+    /* Minimal syntax colours */
+    .tok-k  { color: #C792EA; } /* keyword */
+    .tok-s  { color: #C3E88D; } /* string */
+    .tok-c  { color: #546E7A; } /* comment */
+    .tok-f  { color: #82AAFF; } /* function */
+    .tok-n  { color: var(--green); } /* name/class */
+    .tok-p  { color: #89DDFF; } /* punctuation */
+    .tok-m  { color: #F78C6C; } /* number */
+    .tok-b  { color: var(--text-dim); } /* bash command */
+    .tok-o  { color: #89DDFF; } /* operator */
+
+    /* ============================================================
+       CALLOUT / ALERT BOXES
+       ============================================================ */
+    .callout {
+      display: flex;
+      gap: 14px;
+      padding: 16px 18px;
+      border-radius: var(--radius-sm);
+      margin: 16px 0;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .callout-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    .callout-info {
+      background: rgba(33, 150, 243, 0.08);
+      border: 1px solid rgba(33, 150, 243, 0.3);
+      color: #90CAF9;
+    }
+
+    .callout-success {
+      background: rgba(76, 175, 80, 0.08);
+      border: 1px solid rgba(76, 175, 80, 0.3);
+      color: #A5D6A7;
+    }
+
+    .callout-warn {
+      background: rgba(255, 167, 38, 0.08);
+      border: 1px solid rgba(255, 167, 38, 0.3);
+      color: #FFCC80;
+    }
+
+    .callout-error {
+      background: rgba(255, 85, 85, 0.08);
+      border: 1px solid rgba(255, 85, 85, 0.3);
+      color: #EF9A9A;
+    }
+
+    /* ============================================================
+       TABLE
+       ============================================================ */
+    .table-wrap { overflow-x: auto; margin: 20px 0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    thead tr {
+      border-bottom: 2px solid var(--green-dim);
+      color: var(--green);
+      text-align: left;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    th, td {
+      padding: 10px 14px;
+      vertical-align: top;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface); }
+
+    td:first-child { white-space: nowrap; }
+    td code { font-size: 12px; }
+
+    /* ============================================================
+       TERMINAL WINDOW
+       ============================================================ */
+    .terminal {
+      background: #0d0d0d;
+      border: 1px solid #333;
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin: 16px 0;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .terminal-bar {
+      background: #1c1c1c;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid #333;
+    }
+
+    .terminal-bar .dot { width: 12px; height: 12px; border-radius: 50%; }
+
+    .terminal-body {
+      padding: 18px 20px;
+      font-family: "Consolas", "SF Mono", monospace;
+      font-size: 13px;
+      line-height: 1.75;
+      color: #ccc;
+    }
+
+    .t-prompt { color: var(--green); }
+    .t-cmd    { color: #e0e0e0; }
+    .t-out    { color: var(--text-dim); }
+    .t-ok     { color: #4CAF50; }
+
+    /* ============================================================
+       API REFERENCE
+       ============================================================ */
+    .api-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--green);
+      border-radius: var(--radius-sm);
+      padding: 20px 22px;
+      margin: 20px 0;
+    }
+
+    .api-sig {
+      font-family: "Consolas", monospace;
+      font-size: 14px;
+      color: #82AAFF;
+      margin-bottom: 10px;
+      word-break: break-all;
+    }
+
+    .api-desc {
+      font-size: 14px;
+      color: var(--text-dim);
+      margin-bottom: 14px;
+    }
+
+    .param-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .param-list li {
+      font-size: 13px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .param-name {
+      font-family: "Consolas", monospace;
+      color: #C792EA;
+      white-space: nowrap;
+      min-width: 140px;
+    }
+
+    .param-desc { color: var(--text-dim); line-height: 1.5; }
+
+    /* ============================================================
+       TROUBLESHOOTING CARDS
+       ============================================================ */
+    .trouble-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 28px;
+    }
+
+    .trouble-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+
+    .trouble-card h4 {
+      font-size: 14px;
+      color: #EF9A9A;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .trouble-card p {
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    .trouble-card p strong {
+      color: var(--green);
+    }
+
+    /* ============================================================
+       FOOTER
+       ============================================================ */
+    footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 36px 0;
+      text-align: center;
+    }
+
+    .footer-logo {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    footer p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    footer a {
+      color: var(--green-dim);
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 16px;
+      list-style: none;
+    }
+
+    .footer-links a {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .footer-links a:hover { color: var(--green); text-decoration: none; }
+
+    /* ============================================================
+       PROGRESS BAR DEMO
+       ============================================================ */
+    .progress-demo {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin: 24px 0;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    .progress-bar-wrap {
+      height: 8px;
+      background: #333;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--green-dim), var(--green));
+      border-radius: 4px;
+      animation: progress-anim 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes progress-anim {
+      from { width: 35%; }
+      to   { width: 82%; }
+    }
+
+    .stat-row {
+      display: flex;
+      gap: 24px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      font-size: 13px;
+    }
+
+    .stat-item .val { color: var(--green); font-weight: 700; }
+    .stat-item .lbl { color: var(--text-dim); }
+
+    /* ============================================================
+       SECTION TOC SIDEBAR (small screens hide it)
+       ============================================================ */
+    .page-layout {
+      display: flex;
+      gap: 48px;
+      align-items: flex-start;
+    }
+
+    .sidebar {
+      width: 200px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 80px;
+      display: none; /* show on wider screens below */
+    }
+
+    .sidebar-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .sidebar-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .sidebar-links a {
+      font-size: 13px;
+      color: var(--text-dim);
+      display: block;
+      padding: 4px 0;
+      border-left: 2px solid transparent;
+      padding-left: 12px;
+      transition: all 0.15s;
+    }
+
+    .sidebar-links a:hover {
+      color: var(--green);
+      border-left-color: var(--green);
+      text-decoration: none;
+    }
+
+    .main-content { flex: 1; min-width: 0; }
+
+    @media (min-width: 1080px) {
+      .sidebar { display: block; }
+    }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 640px) {
+      .nav-links { display: none; }
+      .hero h1   { font-size: 28px; }
+      .section   { padding: 40px 0; }
+      .feature-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===================== NAV ===================== -->
+<nav>
+  <div class="container nav-inner">
+    <a class="nav-brand" href="#">
+      <span class="icon">📑</span>
+      CRF Auto-Bookmarker
+      <span class="nav-badge">Docs</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#install">Installation</a></li>
+      <li><a href="#usage">User Guide</a></li>
+      <li><a href="#api">API</a></li>
+      <li><a href="#troubleshoot">Troubleshooting</a></li>
+      <li><a href="https://github.com/rishitmahapatra/automated-crf-bookmarker" target="_blank">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ===================== HERO ===================== -->
+<div class="hero">
+  <div class="container">
+    <div class="hero-eyebrow">
+      <span>📋</span> Clinical Data Management Tool
+    </div>
+    <h1>CRF <span>Auto-Bookmarker</span></h1>
+    <p class="hero-sub">
+      Automatically generate hierarchical PDF bookmarks for Case Report Form (CRF) PDFs.
+      Transform hundreds of un-indexed pages into a fully navigable, structured document — in seconds.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#install">
+        <span>⚡</span> Get Started
+      </a>
+      <a class="btn btn-secondary" href="#usage">
+        <span>📖</span> User Manual
+      </a>
+      <a class="btn btn-secondary" href="https://github.com/rishitmahapatra/automated-crf-bookmarker" target="_blank">
+        <span>⭐</span> GitHub
+      </a>
+    </div>
+
+    <!-- App mock UI -->
+    <div class="screenshot-mock">
+      <div class="mock-titlebar">
+        <span class="mock-dot dot-red"></span>
+        <span class="mock-dot dot-yellow"></span>
+        <span class="mock-dot dot-green"></span>
+        <span class="mock-title">CRF Auto-Bookmarker</span>
+      </div>
+      <div class="mock-body">
+        <div><span class="green">📑 CRF Auto-Bookmarker</span></div>
+        <div style="color:#666;font-size:12px;margin-bottom:12px">Generate hierarchical bookmarks for CRF PDFs automatically</div>
+        <div><span class="blue">📂 Input PDF:</span>  <span style="color:#aaa">ClinicalTrial_Batch01.pdf</span></div>
+        <div style="margin-top:8px"><span class="blue">⚙️  Header scan height:</span>  <span class="green">140 pts</span> <span class="sep">──────────────────●───────</span></div>
+        <div style="margin-top:10px">
+          <span style="background:#4CAF50;color:#fff;padding:4px 12px;border-radius:4px;font-size:12px">🚀 Generate Bookmarks</span>
+          &nbsp;
+          <span style="background:#2196F3;color:#fff;padding:4px 12px;border-radius:4px;font-size:12px">⬇️ Save As...</span>
+        </div>
+        <div style="margin-top:12px;font-size:12px">
+          <div class="sep">════════════════════════════════════════</div>
+          <div>  <span class="green">✅ BOOKMARKING COMPLETE!</span></div>
+          <div class="sep">════════════════════════════════════════</div>
+          <div>  📄 Total Pages:       <span class="green">248</span></div>
+          <div>  📁 Folders (Parents): <span class="green">8</span></div>
+          <div>  📋 Forms (Children):  <span class="green">62</span></div>
+          <div>  📝 Total Bookmarks:   <span class="green">70</span></div>
+          <div>  ⚠️  Pages Skipped:    <span class="gray">12</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MAIN CONTENT ===================== -->
+<div class="container" style="padding-top: 48px; padding-bottom: 48px;">
+  <div class="page-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-title">On this page</div>
+      <ul class="sidebar-links">
+        <li><a href="#what-is-crf">What is a CRF?</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how-it-works">How it works</a></li>
+        <li><a href="#install">Installation</a></li>
+        <li><a href="#usage">User Guide</a></li>
+        <li><a href="#settings">Settings</a></li>
+        <li><a href="#api">Programmatic API</a></li>
+        <li><a href="#packaging">Packaging</a></li>
+        <li><a href="#troubleshoot">Troubleshooting</a></li>
+      </ul>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+      <!-- ──────── WHAT IS A CRF ──────── -->
+      <section class="section" id="what-is-crf">
+        <div class="section-label">Background</div>
+        <h2 class="section-title">What is a CRF & why does this tool exist?</h2>
+        <p class="section-intro">
+          Understanding the domain problem the tool solves.
+        </p>
+
+        <p style="color:var(--text-dim);margin-bottom:16px">
+          In clinical trials, a <strong style="color:var(--text)">Case Report Form (CRF)</strong> is a specialized questionnaire
+          designed to capture protocol-required data for every study participant — recording patient demographics,
+          medical history, vital signs, lab results, adverse events, and efficacy endpoints.
+        </p>
+        <p style="color:var(--text-dim);margin-bottom:16px">
+          During data management and auditing, CRFs from multiple patient visits are bundled into
+          <strong style="color:var(--text)">massive, multi-page PDF compilations</strong> — often spanning hundreds or thousands of pages —
+          with no internal navigation structure.
+        </p>
+
+        <div class="callout callout-error">
+          <span class="callout-icon">⚠️</span>
+          <div>
+            <strong>The Problem:</strong> Clinical Data Managers, Monitors (CRAs), and Biostatisticians waste hours
+            manually hunting for specific patient records in un-bookmarked PDFs. Missing a section during audit
+            review can cause regulatory non-compliance.
+          </div>
+        </div>
+
+        <div class="callout callout-success">
+          <span class="callout-icon">✅</span>
+          <div>
+            <strong>The Solution:</strong> CRF Auto-Bookmarker detects <code>Folder:</code> and <code>Form:</code> headers
+            embedded in each page and constructs a two-level hierarchical Table of Contents directly inside the PDF —
+            reducing navigation time from hours to seconds.
+          </div>
+        </div>
+      </section>
+
+      <!-- ──────── FEATURES ──────── -->
+      <section class="section" id="features">
+        <div class="section-label">Capabilities</div>
+        <h2 class="section-title">Features</h2>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <span class="feature-icon">📑</span>
+            <h3>Hierarchical Bookmarks</h3>
+            <p>Builds a two-level TOC: <strong>Folder</strong> (Trial Visit/Epoch) as parent, <strong>Form</strong> (Clinical Assessment) as child.</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">🌑</span>
+            <h3>Modern Dark UI</h3>
+            <p>CustomTkinter-powered desktop app with a professional dark-mode interface and green accent theme.</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">⚡</span>
+            <h3>Background Processing</h3>
+            <p>Runs the PDF engine on a worker thread so the UI stays responsive during large document processing.</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">📊</span>
+            <h3>Detailed Statistics</h3>
+            <p>Reports total pages, bookmarks created, folders/forms detected, and pages skipped with reasons.</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">⚙️</span>
+            <h3>Adjustable Detection</h3>
+            <p>Slider to control the header scan height (100–250 pts) to match varied CRF PDF layouts.</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">🔌</span>
+            <h3>Programmatic API</h3>
+            <p>Fully in-memory <code>process_crf_bytes()</code> function for pipeline and automation integration.</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">💾</span>
+            <h3>Process Then Save</h3>
+            <p>Bookmark first, choose where to save afterwards — no temp files or pre-selected paths required.</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">📦</span>
+            <h3>Standalone Executable</h3>
+            <p>Bundle into a single <code>.exe</code> with PyInstaller. No Python installation needed to distribute.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ──────── HOW IT WORKS ──────── -->
+      <section class="section" id="how-it-works">
+        <div class="section-label">Algorithm</div>
+        <h2 class="section-title">How it works</h2>
+        <p class="section-intro">
+          The engine reads each page's text via PyMuPDF (fitz) and builds a collapsed Table of Contents.
+        </p>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-left">
+              <div class="step-num">1</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-body">
+              <h3>Open PDF in memory</h3>
+              <p>The engine reads the input file as bytes and opens it with <code>fitz.open(stream=bytes, filetype="pdf")</code> — no temp file written to disk.</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-left">
+              <div class="step-num">2</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-body">
+              <h3>Scan the top region of each page</h3>
+              <p>For every page, text blocks with a top-Y coordinate within the configurable <strong>clip height</strong> (default 140 points from the top) are extracted using <code>page.get_text("dict")</code>.</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-left">
+              <div class="step-num">3</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-body">
+              <h3>Extract Folder and Form labels</h3>
+              <p>Lines containing <code>Folder:</code> and <code>Form:</code> tokens are identified. The text after the colon becomes the bookmark label.</p>
+              <pre><code><span class="tok-c"># Example page header content</span>
+Folder: <span class="tok-s">Screening Visit (Week 0)</span>
+Form:   <span class="tok-s">Adverse Events</span></code></pre>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-left">
+              <div class="step-num">4</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-body">
+              <h3>Build the Table of Contents</h3>
+              <p>A TOC list is assembled where each entry is <code>[level, title, page_number]</code>. Level 1 entries are Folders; Level 2 entries are Forms nested within them. New entries are added only when the folder or form name changes.</p>
+              <pre><code>toc = [
+  [<span class="tok-m">1</span>, <span class="tok-s">"Screening Visit (Week 0)"</span>, <span class="tok-m">1</span>],
+  [<span class="tok-m">2</span>, <span class="tok-s">"Adverse Events"</span>,           <span class="tok-m">1</span>],
+  [<span class="tok-m">2</span>, <span class="tok-s">"Vital Signs"</span>,              <span class="tok-m">14</span>],
+  [<span class="tok-m">1</span>, <span class="tok-s">"Week 4 Follow-up"</span>,         <span class="tok-m">28</span>],
+  ...
+]</code></pre>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-left">
+              <div class="step-num">5</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-body">
+              <h3>Write bookmarks back into PDF</h3>
+              <p><code>doc.set_toc(toc, collapse=1)</code> embeds the TOC with bookmarks collapsed by default. The output is serialised with <code>garbage=4, deflate=True</code> for optimal file size.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ──────── INSTALLATION ──────── -->
+      <section class="section" id="install">
+        <div class="section-label">Setup</div>
+        <h2 class="section-title">Installation Guide</h2>
+        <p class="section-intro">Follow these steps to install and run CRF Auto-Bookmarker on your machine.</p>
+
+        <h3 style="font-size:17px;margin-bottom:12px;margin-top:28px">Prerequisites</h3>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Requirement</th>
+                <th>Version</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Python</strong></td>
+                <td>3.9 or later</td>
+                <td>Download from <a href="https://www.python.org/downloads/" target="_blank">python.org</a></td>
+              </tr>
+              <tr>
+                <td><strong>pip</strong></td>
+                <td>Bundled with Python</td>
+                <td>Update with <code>python -m pip install --upgrade pip</code></td>
+              </tr>
+              <tr>
+                <td><strong>Tk</strong></td>
+                <td>Bundled on Windows/macOS</td>
+                <td>Linux: <code>sudo apt-get install python3-tk</code></td>
+              </tr>
+              <tr>
+                <td><strong>Git</strong> (optional)</td>
+                <td>Any</td>
+                <td>Only needed if cloning from GitHub</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-size:17px;margin:32px 0 12px">Step-by-step installation</h3>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-left">
+              <div class="step-num">1</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-body">
+              <h3>Get the source code</h3>
+              <p>Clone the repository or download the ZIP from GitHub.</p>
+              <div class="terminal">
+                <div class="terminal-bar">
+                  <span class="dot dot-red"></span>
+                  <span class="dot dot-yellow"></span>
+                  <span class="dot dot-green"></span>
+                </div>
+                <div class="terminal-body">
+                  <div><span class="t-prompt">$</span> <span class="t-cmd">git clone https://github.com/rishitmahapatra/automated-crf-bookmarker.git</span></div>
+                  <div class="t-out">Cloning into 'automated-crf-bookmarker'...</div>
+                  <div><span class="t-prompt">$</span> <span class="t-cmd">cd automated-crf-bookmarker</span></div>
+                </div>
+              </div>
+              <div class="callout callout-info">
+                <span class="callout-icon">💡</span>
+                <div>Alternatively, download the ZIP from the GitHub repository page and extract it to your preferred folder.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-left">
+              <div class="step-num">2</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-body">
+              <h3>Create a virtual environment <em style="font-size:12px;color:var(--text-muted)">(recommended)</em></h3>
+              <p>Isolate dependencies from your system Python installation.</p>
+              <div class="terminal">
+                <div class="terminal-bar">
+                  <span class="dot dot-red"></span>
+                  <span class="dot dot-yellow"></span>
+                  <span class="dot dot-green"></span>
+                </div>
+                <div class="terminal-body">
+                  <div class="t-out"># Windows</div>
+                  <div><span class="t-prompt">$</span> <span class="t-cmd">python -m venv venv</span></div>
+                  <div><span class="t-prompt">$</span> <span class="t-cmd">venv\Scripts\activate</span></div>
+                  <div style="margin-top:10px" class="t-out"># macOS / Linux</div>
+                  <div><span class="t-prompt">$</span> <span class="t-cmd">python3 -m venv venv</span></div>
+                  <div><span class="t-prompt">$</span> <span class="t-cmd">source venv/bin/activate</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-left">
+              <div class="step-num">3</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-body">
+              <h3>Install dependencies</h3>
+              <p>Install all required packages from <code>requirements.txt</code>.</p>
+              <div class="terminal">
+                <div class="terminal-bar">
+                  <span class="dot dot-red"></span>
+                  <span class="dot dot-yellow"></span>
+                  <span class="dot dot-green"></span>
+                </div>
+                <div class="terminal-body">
+                  <div><span class="t-prompt">$</span> <span class="t-cmd">pip install -r requirements.txt</span></div>
+                  <div class="t-out">Collecting customtkinter&gt;=5.2.0 ...</div>
+                  <div class="t-out">Collecting pymupdf&gt;=1.23.0 ...</div>
+                  <div class="t-ok">Successfully installed customtkinter pymupdf ✓</div>
+                </div>
+              </div>
+              <p style="margin-top:12px">Or install packages individually:</p>
+              <pre><code><span class="tok-b">pip install</span> customtkinter&gt;=5.2.0
+<span class="tok-b">pip install</span> pymupdf&gt;=1.23.0</code></pre>
+              <div class="callout callout-warn">
+                <span class="callout-icon">🐧</span>
+                <div>On <strong>Linux</strong>, if Tk is missing run: <code>sudo apt-get install python3-tk</code> (Debian/Ubuntu) or <code>sudo dnf install python3-tkinter</code> (Fedora/RHEL).</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-left">
+              <div class="step-num">4</div>
+            </div>
+            <div class="step-body">
+              <h3>Launch the application</h3>
+              <p>Run the desktop GUI with a single command.</p>
+              <div class="terminal">
+                <div class="terminal-bar">
+                  <span class="dot dot-red"></span>
+                  <span class="dot dot-yellow"></span>
+                  <span class="dot dot-green"></span>
+                </div>
+                <div class="terminal-body">
+                  <div><span class="t-prompt">$</span> <span class="t-cmd">python app.py</span></div>
+                  <div class="t-ok">→ CRF Auto-Bookmarker window opens</div>
+                </div>
+              </div>
+              <div class="callout callout-success">
+                <span class="callout-icon">✅</span>
+                <div>If the window appears, the installation is complete. Proceed to the <a href="#usage">User Guide</a>.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ──────── USER GUIDE ──────── -->
+      <section class="section" id="usage">
+        <div class="section-label">User Manual</div>
+        <h2 class="section-title">Using the Application</h2>
+        <p class="section-intro">
+          Step-by-step walkthrough for generating bookmarks with the desktop GUI.
+        </p>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-left">
+              <div class="step-num">1</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-body">
+              <h3>Select your CRF PDF</h3>
+              <p>Click the <strong>Browse</strong> button next to the <em>Input PDF</em> field. A file picker dialog will open. Navigate to your un-bookmarked CRF PDF and click <strong>Open</strong>. The file path will appear in the input field.</p>
+              <div class="callout callout-info">
+                <span class="callout-icon">📋</span>
+                <div>The tool works with any text-based CRF PDF that contains visible <code>Folder:</code> and <code>Form:</code> labels in the page header area. Image-only (scanned) PDFs require OCR pre-processing — see <a href="#troubleshoot">Troubleshooting</a>.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-left">
+              <div class="step-num">2</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-body">
+              <h3>Adjust header scan height <em style="font-size:12px;color:var(--text-muted)">(optional)</em></h3>
+              <p>The <strong>Header scan height</strong> slider controls how far down from the top of each page the engine searches for <code>Folder:</code> and <code>Form:</code> labels.</p>
+              <div class="table-wrap" style="margin:12px 0">
+                <table>
+                  <thead><tr><th>Setting</th><th>Value</th><th>When to use</th></tr></thead>
+                  <tbody>
+                    <tr><td>Default</td><td>140 pts</td><td>Works for most standard CRF templates</td></tr>
+                    <tr><td>Lower</td><td>100–130 pts</td><td>Headers are positioned very close to the top</td></tr>
+                    <tr><td>Higher</td><td>160–250 pts</td><td>Headers are placed further down or span multiple lines</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>Drag the slider left/right. The current value in points is displayed immediately to the right of the slider.</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-left">
+              <div class="step-num">3</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-body">
+              <h3>Generate Bookmarks</h3>
+              <p>Click the <strong>🚀 Generate Bookmarks</strong> button. The engine processes your PDF in a background thread:</p>
+              <ul style="color:var(--text-dim);font-size:14px;line-height:1.8;padding-left:20px;margin:8px 0">
+                <li>The progress bar fills as each page is processed.</li>
+                <li>A status label shows <em>Processing page X of Y...</em></li>
+                <li>The button is disabled during processing to prevent double-clicks.</li>
+              </ul>
+              <div class="progress-demo">
+                <div class="progress-label">
+                  <span>Processing page 186 of 248...</span>
+                  <span style="color:var(--green)">75%</span>
+                </div>
+                <div class="progress-bar-wrap">
+                  <div class="progress-fill"></div>
+                </div>
+                <div class="stat-row">
+                  <div class="stat-item"><span class="val">186 </span><span class="lbl">pages scanned</span></div>
+                  <div class="stat-item"><span class="val">6 </span><span class="lbl">folders found</span></div>
+                  <div class="stat-item"><span class="val">47 </span><span class="lbl">forms found</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-left">
+              <div class="step-num">4</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-body">
+              <h3>Review the results</h3>
+              <p>Once complete, the results console shows a detailed summary:</p>
+              <pre><code>═══════════════════════════════════════════════════════
+  <span class="tok-n">✅ BOOKMARKING COMPLETE!</span>
+═══════════════════════════════════════════════════════
+
+  📄 Total Pages:            248
+  📁 Folders (Parents):      8
+  📋 Forms (Children):       62
+  📝 Total Bookmarks:        70
+  ⚠️  Pages Skipped:          12
+
+  👉 Click 'Save As...' to choose where to save the file.
+
+  📁 Unique Folders (8):
+     • Screening Visit (Week 0)
+     • Week 4 Visit
+     • Week 8 Visit
+     ...
+
+  📋 Unique Forms (62):
+     • Adverse Events
+     • Concomitant Medications
+     ...</code></pre>
+              <div class="callout callout-info">
+                <span class="callout-icon">ℹ️</span>
+                <div><strong>Pages Skipped</strong> are pages that didn't contain both a <code>Folder:</code> and <code>Form:</code> header within the scan region (e.g. cover pages, blank pages, or pages with a different layout). This is normal.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-left">
+              <div class="step-num">5</div>
+            </div>
+            <div class="step-body">
+              <h3>Save the bookmarked PDF</h3>
+              <p>Click <strong>⬇️ Save As...</strong> (enabled after successful processing). A save dialog opens with the suggested filename <code>OriginalName_Bookmarked.pdf</code>. Choose your destination folder and click <strong>Save</strong>.</p>
+              <div class="callout callout-success">
+                <span class="callout-icon">💾</span>
+                <div>The output PDF is fully self-contained. Open it in any PDF reader — the left-side bookmarks panel will show the complete Folder → Form hierarchy, ready for instant navigation.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ──────── SETTINGS ──────── -->
+      <section class="section" id="settings">
+        <div class="section-label">Configuration</div>
+        <h2 class="section-title">Settings Reference</h2>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Setting</th>
+                <th>Default</th>
+                <th>Range</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>clip_height</code></td>
+                <td>140 pts</td>
+                <td>100 – 250 pts</td>
+                <td>How far down from the top of each page to search for <code>Folder:</code> and <code>Form:</code> headers. 1 point ≈ 0.353 mm.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-size:16px;margin:28px 0 12px">UI colour states</h3>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>State</th><th>Colour</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Ready</td>
+                <td><span style="color:#9e9e9e">■ Gray</span></td>
+                <td>Waiting for user action</td>
+              </tr>
+              <tr>
+                <td>Processing</td>
+                <td><span style="color:#e0e0e0">■ White</span></td>
+                <td>Engine running in background</td>
+              </tr>
+              <tr>
+                <td>Success</td>
+                <td><span style="color:#4CAF50">■ Green (#4CAF50)</span></td>
+                <td>Bookmarks generated, ready to save</td>
+              </tr>
+              <tr>
+                <td>Error</td>
+                <td><span style="color:#FF5555">■ Red (#FF5555)</span></td>
+                <td>Processing failed — see results console for details</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ──────── API ──────── -->
+      <section class="section" id="api">
+        <div class="section-label">Developer Reference</div>
+        <h2 class="section-title">Programmatic API</h2>
+        <p class="section-intro">
+          Use <code>bookmarker.py</code> directly in your own Python scripts or pipelines without launching the GUI.
+        </p>
+
+        <div class="api-block">
+          <div class="api-sig">
+            <span class="tok-f">process_crf_bytes</span><span class="tok-p">(</span>input_bytes<span class="tok-p">:</span> <span class="tok-n">bytes</span><span class="tok-p">,</span> clip_height<span class="tok-p">:</span> <span class="tok-n">float</span> <span class="tok-o">=</span> <span class="tok-m">140</span><span class="tok-p">,</span> progress_callback<span class="tok-o">=</span><span class="tok-k">None</span><span class="tok-p">)</span> <span class="tok-o">→</span> <span class="tok-n">BookmarkResult</span>
+          </div>
+          <p class="api-desc">Processes a CRF PDF entirely in memory and returns the bookmarked PDF as bytes. No temporary files are created.</p>
+          <ul class="param-list">
+            <li>
+              <span class="param-name">input_bytes</span>
+              <span class="param-desc"><code>bytes</code> — Raw bytes of the input PDF file.</span>
+            </li>
+            <li>
+              <span class="param-name">clip_height</span>
+              <span class="param-desc"><code>float</code> — Height from the top of each page (in points) to scan for headers. Default: <code>140</code>.</span>
+            </li>
+            <li>
+              <span class="param-name">progress_callback</span>
+              <span class="param-desc"><code>callable(current, total)</code> — Optional function called with page progress. Use for custom progress tracking.</span>
+            </li>
+          </ul>
+        </div>
+
+        <h3 style="font-size:16px;margin:28px 0 12px">BookmarkResult dataclass</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>success</code></td><td><code>bool</code></td><td>Whether bookmarking succeeded</td></tr>
+              <tr><td><code>total_pages</code></td><td><code>int</code></td><td>Number of pages in the PDF</td></tr>
+              <tr><td><code>parent_count</code></td><td><code>int</code></td><td>Number of Folder-level (L1) bookmarks</td></tr>
+              <tr><td><code>child_count</code></td><td><code>int</code></td><td>Number of Form-level (L2) bookmarks</td></tr>
+              <tr><td><code>total_bookmarks</code></td><td><code>int</code></td><td>Total bookmarks inserted</td></tr>
+              <tr><td><code>pages_skipped</code></td><td><code>int</code></td><td>Pages where no header was found</td></tr>
+              <tr><td><code>unique_folders</code></td><td><code>List[str]</code></td><td>Sorted list of unique Folder names found</td></tr>
+              <tr><td><code>unique_forms</code></td><td><code>List[str]</code></td><td>Sorted list of unique Form names found</td></tr>
+              <tr><td><code>output_bytes</code></td><td><code>Optional[bytes]</code></td><td>The bookmarked PDF as bytes (<code>None</code> on failure)</td></tr>
+              <tr><td><code>error_message</code></td><td><code>Optional[str]</code></td><td>Human-readable error description (<code>None</code> on success)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-size:16px;margin:28px 0 12px">Example usage</h3>
+        <pre><code><span class="tok-k">from</span> bookmarker <span class="tok-k">import</span> process_crf_bytes
+
+<span class="tok-c"># Read input PDF</span>
+<span class="tok-k">with</span> <span class="tok-f">open</span>(<span class="tok-s">"ClinicalTrial_Batch01.pdf"</span>, <span class="tok-s">"rb"</span>) <span class="tok-k">as</span> f:
+    input_bytes <span class="tok-o">=</span> f.<span class="tok-f">read</span>()
+
+<span class="tok-c"># Process (increase clip_height if headers are lower on the page)</span>
+result <span class="tok-o">=</span> <span class="tok-f">process_crf_bytes</span>(input_bytes, clip_height<span class="tok-o">=</span><span class="tok-m">140</span>)
+
+<span class="tok-k">if</span> result.success:
+    <span class="tok-k">with</span> <span class="tok-f">open</span>(<span class="tok-s">"ClinicalTrial_Batch01_Bookmarked.pdf"</span>, <span class="tok-s">"wb"</span>) <span class="tok-k">as</span> f:
+        f.<span class="tok-f">write</span>(result.output_bytes)
+    <span class="tok-f">print</span>(<span class="tok-s">f"✅ Created {result.parent_count} folders, {result.child_count} forms"</span>)
+    <span class="tok-f">print</span>(<span class="tok-s">f"   {result.total_bookmarks} total bookmarks across {result.total_pages} pages"</span>)
+<span class="tok-k">else</span>:
+    <span class="tok-f">print</span>(<span class="tok-s">f"❌ Failed: {result.error_message}"</span>)</code></pre>
+        <span class="code-lang">python</span>
+
+        <h3 style="font-size:16px;margin:28px 0 12px">Batch processing example</h3>
+        <pre><code><span class="tok-k">import</span> pathlib
+<span class="tok-k">from</span> bookmarker <span class="tok-k">import</span> process_crf_bytes
+
+input_dir  <span class="tok-o">=</span> pathlib.Path(<span class="tok-s">"./raw_crfs"</span>)
+output_dir <span class="tok-o">=</span> pathlib.Path(<span class="tok-s">"./bookmarked_crfs"</span>)
+output_dir.<span class="tok-f">mkdir</span>(exist_ok<span class="tok-o">=</span><span class="tok-k">True</span>)
+
+<span class="tok-k">for</span> pdf_path <span class="tok-k">in</span> input_dir.<span class="tok-f">glob</span>(<span class="tok-s">"*.pdf"</span>):
+    input_bytes <span class="tok-o">=</span> pdf_path.<span class="tok-f">read_bytes</span>()
+    result      <span class="tok-o">=</span> <span class="tok-f">process_crf_bytes</span>(input_bytes)
+
+    <span class="tok-k">if</span> result.success:
+        out_path <span class="tok-o">=</span> output_dir <span class="tok-o">/</span> <span class="tok-s">f"{pdf_path.stem}_Bookmarked.pdf"</span>
+        out_path.<span class="tok-f">write_bytes</span>(result.output_bytes)
+        <span class="tok-f">print</span>(<span class="tok-s">f"✅ {pdf_path.name} → {result.total_bookmarks} bookmarks"</span>)
+    <span class="tok-k">else</span>:
+        <span class="tok-f">print</span>(<span class="tok-s">f"❌ {pdf_path.name}: {result.error_message}"</span>)</code></pre>
+        <span class="code-lang">python</span>
+      </section>
+
+      <!-- ──────── PACKAGING ──────── -->
+      <section class="section" id="packaging">
+        <div class="section-label">Distribution</div>
+        <h2 class="section-title">Packaging as a standalone executable</h2>
+        <p class="section-intro">
+          Build a single <code>.exe</code> that runs without requiring Python on the end-user's machine.
+        </p>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-left">
+              <div class="step-num">1</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-body">
+              <h3>Install PyInstaller</h3>
+              <pre><code><span class="tok-b">pip install</span> pyinstaller&gt;=6.0.0</code></pre>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-left">
+              <div class="step-num">2</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-body">
+              <h3>Build the executable</h3>
+              <p>Use the provided <code>build_exe.bat</code> on Windows, or run the command directly:</p>
+              <div class="terminal">
+                <div class="terminal-bar">
+                  <span class="dot dot-red"></span>
+                  <span class="dot dot-yellow"></span>
+                  <span class="dot dot-green"></span>
+                </div>
+                <div class="terminal-body">
+                  <div class="t-out"># Using build_exe.bat (Windows)</div>
+                  <div><span class="t-prompt">></span> <span class="t-cmd">build_exe.bat</span></div>
+                  <div style="margin-top:10px" class="t-out"># Or run PyInstaller directly</div>
+                  <div><span class="t-prompt">$</span> <span class="t-cmd">pyinstaller --noconsole --onefile --name "CRF_AutoBookmarker" --add-data "bookmarker.py;." app.py</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-left">
+              <div class="step-num">3</div>
+            </div>
+            <div class="step-body">
+              <h3>Find the output</h3>
+              <p>The built executable is at <code>dist/CRF_AutoBookmarker.exe</code>. This single file can be distributed and run on any compatible Windows machine without a Python installation.</p>
+              <div class="callout callout-info">
+                <span class="callout-icon">💡</span>
+                <div>The <code>.spec</code> file in the repository (<code>CRF_AutoBookmarker.spec</code>) pre-configures PyInstaller with the correct settings and resource bundling. Run <code>pyinstaller CRF_AutoBookmarker.spec</code> to use it.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ──────── TROUBLESHOOTING ──────── -->
+      <section class="section" id="troubleshoot">
+        <div class="section-label">Help</div>
+        <h2 class="section-title">Troubleshooting</h2>
+        <p class="section-intro">Common issues and how to resolve them.</p>
+
+        <div class="trouble-grid">
+          <div class="trouble-card">
+            <h4>❌ Zero bookmarks generated</h4>
+            <p>The engine couldn't find <code>Folder:</code> or <code>Form:</code> labels.<br><br>
+              <strong>Fix:</strong> Try increasing the <em>Header scan height</em> slider to 180–250 pts. Verify your PDF actually contains these literal text labels in the page header.</p>
+          </div>
+          <div class="trouble-card">
+            <h4>❌ Failed to open PDF</h4>
+            <p>The PDF file could not be parsed by PyMuPDF.<br><br>
+              <strong>Fix:</strong> Check if the file is corrupted (open it in a PDF reader first). Re-export or re-download the PDF if needed.</p>
+          </div>
+          <div class="trouble-card">
+            <h4>❌ Scanned / image-only PDF</h4>
+            <p>The PDF contains scanned images with no embedded text layer.<br><br>
+              <strong>Fix:</strong> Run OCR first (e.g., Adobe Acrobat, Tesseract, or ABBYY FineReader) to embed a text layer, then process with this tool.</p>
+          </div>
+          <div class="trouble-card">
+            <h4>❌ ModuleNotFoundError: tkinter</h4>
+            <p>Tk is not installed on your system (common on Linux).<br><br>
+              <strong>Fix (Debian/Ubuntu):</strong> <code>sudo apt-get install python3-tk</code><br>
+              <strong>Fix (Fedora/RHEL):</strong> <code>sudo dnf install python3-tkinter</code></p>
+          </div>
+          <div class="trouble-card">
+            <h4>❌ Some pages skipped</h4>
+            <p>Cover pages, blank pages, or pages with a different layout won't have matching headers — this is expected.<br><br>
+              <strong>Not a bug:</strong> Skipped pages are reported in the results console for transparency.</p>
+          </div>
+          <div class="trouble-card">
+            <h4>❌ Folders and Forms mixed up</h4>
+            <p>The header text contains <code>Folder:</code> and <code>Form:</code> labels but in an unexpected position.<br><br>
+              <strong>Fix:</strong> Slightly increase or decrease the <em>Header scan height</em> to fine-tune which text blocks are captured.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info" style="margin-top:28px">
+          <span class="callout-icon">🐛</span>
+          <div>Found a bug or have a feature request? Open an issue on
+            <a href="https://github.com/rishitmahapatra/automated-crf-bookmarker/issues" target="_blank">GitHub Issues</a>.
+          </div>
+        </div>
+      </section>
+
+      <!-- ──────── PROJECT LAYOUT ──────── -->
+      <section class="section" id="layout">
+        <div class="section-label">Project Structure</div>
+        <h2 class="section-title">File layout</h2>
+
+        <pre><code>automated-crf-bookmarker/
+├── <span class="tok-n">app.py</span>                  <span class="tok-c"># Desktop GUI (CustomTkinter)</span>
+├── <span class="tok-n">bookmarker.py</span>           <span class="tok-c"># PDF bookmarking engine (PyMuPDF)</span>
+├── <span class="tok-n">requirements.txt</span>        <span class="tok-c"># Python dependencies</span>
+├── <span class="tok-n">CRF_AutoBookmarker.spec</span> <span class="tok-c"># PyInstaller bundle config</span>
+├── <span class="tok-n">build_exe.bat</span>           <span class="tok-c"># Windows build helper script</span>
+└── <span class="tok-n">README.md</span>               <span class="tok-c"># Project overview</span></code></pre>
+
+        <div class="table-wrap" style="margin-top:20px">
+          <table>
+            <thead><tr><th>File</th><th>Role</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><code>app.py</code></td>
+                <td>Entry point for the desktop application. Contains the <code>CRFBookmarkerApp</code> class built with CustomTkinter. Handles all UI events, file dialogs, progress updates, and threading.</td>
+              </tr>
+              <tr>
+                <td><code>bookmarker.py</code></td>
+                <td>Pure bookmarking logic with no UI dependency. Exports <code>process_crf_bytes()</code> and <code>process_crf()</code>. Safe to import in scripts and pipelines.</td>
+              </tr>
+              <tr>
+                <td><code>requirements.txt</code></td>
+                <td>Pinned minimum versions of <code>customtkinter</code>, <code>pymupdf</code>, and <code>pyinstaller</code>.</td>
+              </tr>
+              <tr>
+                <td><code>CRF_AutoBookmarker.spec</code></td>
+                <td>PyInstaller spec that bundles CustomTkinter assets and <code>bookmarker.py</code> for the Windows executable.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ===================== FOOTER ===================== -->
+<footer>
+  <div class="container">
+    <div class="footer-logo">📑 CRF Auto-Bookmarker</div>
+    <p>Open-source tool for clinical data management workflows.</p>
+    <ul class="footer-links">
+      <li><a href="https://github.com/rishitmahapatra/automated-crf-bookmarker" target="_blank">GitHub Repository</a></li>
+      <li><a href="#install">Installation</a></li>
+      <li><a href="#usage">User Guide</a></li>
+      <li><a href="#api">API</a></li>
+      <li><a href="#troubleshoot">Troubleshooting</a></li>
+    </ul>
+    <p style="margin-top:16px">Built with <a href="https://github.com/TomSchimansky/CustomTkinter" target="_blank">CustomTkinter</a> &amp; <a href="https://pymupdf.readthedocs.io/" target="_blank">PyMuPDF</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
