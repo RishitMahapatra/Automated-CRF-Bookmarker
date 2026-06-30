@@ -5,9 +5,12 @@
 <img width="1672" height="941" alt="bookmarker logo " src="https://github.com/user-attachments/assets/9bca92bf-cdd4-465c-8e24-16aace6273ad" />
 </p>
 
+
 <p align="center">
   <b>Automated CRF Bookmarking Tool</b><br>
-</p>   
+  Full documentation is available at: <strong><a href="https://rishitmahapatra.github.io/Automated-CRF-Bookmarker/">Documentation</a></strong>
+  
+</p>
 
 <p align="center">
    
