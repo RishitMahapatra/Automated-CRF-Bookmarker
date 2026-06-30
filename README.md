@@ -1,4 +1,8 @@
 # CRF Auto-Bookmarker
+![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![PyMuPDF](https://img.shields.io/badge/PyMuPDF-PDF_Engine-0ea5e9?style=for-the-badge)
+![CustomTkinter](https://img.shields.io/badge/CustomTkinter-Dark_UI-2b2b2b?style=for-the-badge)
+![MIT License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)
 
 Automatically generate hierarchical PDF bookmarks for raw Case Report Form (CRF) PDFs based on simple header logic. This desktop application uses a modern dark-mode UI built with CustomTkinter and a PyMuPDF engine to detect “Folder:” and “Form:” headers and create a clean two-level Table of Contents.
 
